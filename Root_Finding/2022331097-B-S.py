@@ -4,15 +4,25 @@ import numpy as np
 
 # Function parser (safe eval: only allows math functions & variable x)
 def f(x):
-    return eval(func_str, {"x": x, "math": math, "__builtins__": None})
+    try:
+        return eval(func_str, {"x": x, "math": math, "_builtins_": None})
+    except Exception as e:
+        print(f"Error evaluating f({x}): {e}")  # Show exception like division by zero
+        return None
 
 # ---------------- Bisection Method Implementation ----------------
 def bisection(lower_bound, upper_bound, tolerance=1e-6, max_iterations=200):
     """
     Finds a root of f(x) in the interval [lower_bound, upper_bound] using the bisection method.
     """
-    # Check that f(a) and f(b) have opposite signs (Intermediate Value Theorem condition)
-    if f(lower_bound) * f(upper_bound) >= 0:
+    f_lower = f(lower_bound)
+    f_upper = f(upper_bound)
+
+    if f_lower is None or f_upper is None:
+        print("Cannot evaluate function at interval endpoints.")
+        return None, []
+
+    if f_lower * f_upper >= 0:
         print("Bisection method fails: f(a) and f(b) must have opposite signs.")
         return None, []
 
@@ -22,11 +32,15 @@ def bisection(lower_bound, upper_bound, tolerance=1e-6, max_iterations=200):
 
     # Main iteration loop
     for iteration in range(1, max_iterations + 1):
-        # Midpoint
         midpoint = (lower_bound + upper_bound) / 2
         f_a = f(lower_bound)
         f_b = f(upper_bound)
         f_mid = f(midpoint)
+
+        # Stop if function evaluation fails
+        if f_a is None or f_b is None or f_mid is None:
+            print("Division by zero or invalid function evaluation occurred. Stopping iterations.")
+            return None, []
 
         # Approximate error (percentage)
         if previous_mid is not None:
@@ -46,8 +60,6 @@ def bisection(lower_bound, upper_bound, tolerance=1e-6, max_iterations=200):
 
         # Store iteration data
         table.append([iteration, lower_bound, upper_bound, f_a, f_b, midpoint, f_mid, error, sig_digits])
-
-        # Update for next iteration
         previous_mid = midpoint
 
         # Check stopping conditions: function close to zero or interval small enough
